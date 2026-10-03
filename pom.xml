@@ -181,7 +181,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-war-plugin</artifactId>
-				<version>4.13.2</version> <!-- or latest stable -->
+				<version>3.4.0</version> <!-- or latest stable -->
 			</plugin>
 		<!-- CODE COVERAGE -->
  		    <plugin>
