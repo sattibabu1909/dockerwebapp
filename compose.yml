@@ -2,25 +2,25 @@ version: "3.9"
 
 services:
   devopsdb:
-    image: shaikmustafa/deepika:db
+    image: dbimage
     ports:
       - "3306:3306"
-    deploy:
-      replicas: 1
-    networks:
-      - mynetwork
+   ##deploy:
+     ## replicas: 1
+   ## networks:
+      ##- mynetwork
 
   application:
-    image: shaikmustafa/deepika:app
+    image: appimage
     ports:
       - "1111:8080"
-    deploy:
-      replicas: 3
+    ##deploy:
+      ##replicas: 3
     depends_on:
       - devopsdb
-    networks:
-      - mynetwork
+    ##networks:
+      ##- mynetwork
 
-networks:
-  mynetwork:
-    driver: overlay
+##networks:
+  ##mynetwork:
+    ##driver: overlay
