@@ -1,0 +1,68 @@
+pipeline {
+    agent {
+        node {
+            label 'prod'
+        }
+    }
+    tools {
+        maven 'mymaven'
+    }
+
+    stages {
+        stage('Code') {
+            steps {
+                git "https://github.com/sattibabu1909/dockerwebapp.git"
+            }
+        }
+        stage('Build') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+        stage('CQA') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=Myproject"
+                }
+            }
+        }
+        stage('Quality gates') {
+            steps {
+                waitForQualityGate abortPipeline: true, credentialsId: 'sonar'
+            }
+        }
+        stage('Artifact') {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'vprofile', classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexus', groupId: 'com.visualpathit', nexusUrl: '3.236.128.85:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'sattirepo', version: 'v2'
+            }
+        }
+        stage('Docker Image') {
+            steps {
+                sh 'cp -r target Docker-app'
+                sh 'docker build -t appimage Docker-app'
+                sh 'docker build -t dbimage Docker-db'
+            }
+        }
+        stage('trivy scan') {
+            steps {
+                sh 'trivy image appimage >> app-image-report.txt'
+                sh 'trivy image dbimage >> dbimage-report-txt'
+            }
+        }
+        stage('Registry') {
+            steps {
+                withDockerRegistry(credentialsId: 'dockerhub') {
+                    sh 'docker tag appimage sattibabudevops/oct-app:javaapp'
+                    sh 'docker tag dbimage sattibabudevops/oct-app:db'
+                    sh 'docker push sattibabudevops/oct-app:javaapp'
+                    sh 'docker push sattibabudevops/oct-app:db'
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'docker stack deploy myapp --compose-file=compose.yml'
+            }
+        }
+    }
+}
